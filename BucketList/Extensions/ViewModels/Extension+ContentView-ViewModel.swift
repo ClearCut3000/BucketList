@@ -1,5 +1,5 @@
 //
-//  ViewModel.swift
+//  Extension+ContentView-ViewModel.swift
 //  BucketList
 //
 //  Created by Николай Никитин on 26.10.2022.
@@ -20,6 +20,8 @@ extension ContentView {
     @Published private(set) var locations: [Location]
     @Published var selectedPlace: Location?
     @Published var isUnlocked = false
+    @Published var authentificationError = "Unknown error"
+    @Published var isShowingAuthentificationError = false
     let savePath = FileManager.documentsDirectory.appending(component: "SavedPlaces")
 
     //MARK: - ViewModel Init
@@ -67,18 +69,20 @@ extension ContentView {
       if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
         let reason = "Please authenticate yourself to unlock your places."
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authError in
-          if success {
-            Task { @MainActor in
+          Task { @MainActor in
+            if success {
               self.isUnlocked = true
+            } else {
+              //error
+              self.authentificationError = "Biometric authentification evalueted with error: \(String(describing: authError?.localizedDescription))"
+              self.isShowingAuthentificationError = true
             }
-          } else {
-            //error
-            
           }
         }
       } else {
         // no biometrics
-
+        authentificationError = "Sorry, your device doesn't support biometric authentification"
+        isShowingAuthentificationError = true
       }
     }
   }
